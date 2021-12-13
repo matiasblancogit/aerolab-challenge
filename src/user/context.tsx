@@ -3,7 +3,9 @@ import { Center,CircularProgress } from '@chakra-ui/react';
 import React from 'react';
 
 import api from './api';
+import productApi from '~/product/api';
 import { User } from './types';
+import { Product } from '~/product/types';
 
 export interface  Context {
     state:{
@@ -11,6 +13,7 @@ export interface  Context {
     },
     actions:{
         addPoints: (amount:number)=>Promise<void>;
+        redeem :(product: Product)=>Promise<void>;
     },
 }
 
@@ -19,6 +22,14 @@ const UserContext=React.createContext({} as Context);
 const UserProvider:React.FC = ({children})=>{
     const [user, setUser] = React.useState<User>();
     const [status, setStatus] = React.useState<"pending"|"resolved"|"rejected">("pending");
+
+    async function handleRedeem(product: Product){
+        if(!user) return;
+
+        return productApi.redeem(product).then(()=>{
+                setUser({...user,points:user.points - product.cost})
+        });
+    }
 
    async function handleAddPoints(amount:number){
         if(!user) return;
@@ -45,7 +56,8 @@ const UserProvider:React.FC = ({children})=>{
 
     const state:Context['state']={user};
     const actions={
-        addPoints: handleAddPoints
+        addPoints: handleAddPoints,
+        redeem: handleRedeem
     };
     return  <UserContext.Provider value={{state,actions}}>{children}</UserContext.Provider> 
 }
